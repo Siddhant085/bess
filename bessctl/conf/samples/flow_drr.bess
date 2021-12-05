@@ -1,0 +1,57 @@
+import scapy.all as scapy
+import random
+
+pkt_rate=int($BESS_PKT_RATE!'1000000')
+num_acl_rules=int($BESS_ACL_RULES!'1000')
+
+eth = scapy.Ether(src='02:1e:67:9f:4d:ae', dst='06:16:3e:1b:72:32')
+ip = scapy.IP(src='10.0.0.1', dst='10.0.0.2')
+tcp = scapy.TCP(sport=10001, dport=10002)
+payload = ('hello'+'a'*random.randint(1,100))
+
+pkt = eth/ip/tcp/payload
+pkt_data = bytes(pkt)
+
+eth = scapy.Ether(src='02:1e:67:9f:4d:ae', dst='06:16:3e:1b:72:32')
+ip = scapy.IP(src='10.0.0.1', dst='10.0.0.2')
+tcp = scapy.TCP(sport=10001, dport=10002)
+payload = ('hello'+'a'*random.randint(1,100))
+
+pkt = eth/ip/tcp/payload
+
+pkt_data = bytes(pkt)
+def gen_packet(src_ip='10.0.0.1', dst_ip='10.0.0.2'):
+	eth = scapy.Ether(src='02:1e:67:9f:4d:ae', dst='06:16:3e:1b:72:32')
+	ip = scapy.IP(src=src_ip, dst=dst_ip)
+	tcp = scapy.TCP(sport=10001, dport=10002)
+	payload = ('hello'+'a'*random.randint(1,100))
+	pkt = eth/ip/tcp/payload
+	pkt_data = bytes(pkt)
+	return pkt_data
+
+fg::FlowGen(template=gen_packet('10.0.0.1','10.0.0.2'), pps=pkt_rate, flow_rate=1e2, flow_duration=10, arrival='uniform', quick_rampup=True, port_src_range=1000, port_dst_range=1000)
+#drr::DRR(num_flows=10, quantum=10000)
+ts::Timestamp()
+q::Queue(size=4096)
+#q_out::Queue(size=4096)
+ms::Measure()
+rules=[]
+for i in range(num_acl_rules):
+	rules.append({'src_ip':'10.0.0.5/32', 'src_port':i, 'drop':True})
+rules.append({'src_ip': '10.0.0.1/32', 'drop':False})
+acl::ACL(rules=rules)
+stat::Stat(frequency=100)
+#src::Source()
+
+fg -> ts -> stat -> q
+#q_out->q
+q -> acl -> ms -> Sink()
+#src -> Rewrite(templates=[gen_packet('10.0.0.3')]) -> q
+
+bess.add_worker(1,1)
+bess.add_worker(2,2)
+bess.add_worker(3,3)
+fg.attach_task(wid=3)
+q.attach_task(wid=2)
+#q_out.attach_task(wid=1)
+
