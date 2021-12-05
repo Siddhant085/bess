@@ -175,6 +175,7 @@ class FlowGen final : public Module {
   } pareto_;
 
   int burst_;
+  int limit_;
 };
 
 #endif  // BESS_MODULES_FLOWGEN_H_

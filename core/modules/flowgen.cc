@@ -356,6 +356,7 @@ CommandResponse FlowGen::Init(const bess::pb::FlowGenArg &arg) {
   pareto_.alpha = 1.3;
   burst_ = bess::PacketBatch::kMaxBurst;
   l4_proto_ = 0;
+  limit_ = 10000000;
 
   /* register task */
   tid = RegisterTask(nullptr);
@@ -493,6 +494,9 @@ void FlowGen::GeneratePackets(Context *ctx, bess::PacketBatch *batch) {
   batch->clear();
   const int burst = ACCESS_ONCE(burst_);
 
+  if (limit_ <= 0) {
+    return;
+  }
   while (batch->cnt() < burst && !events_.empty()) {
     uint64_t t = events_.top().first;
     struct flow *f = events_.top().second;
@@ -515,6 +519,7 @@ void FlowGen::GeneratePackets(Context *ctx, bess::PacketBatch *batch) {
     }
     if (pkt) {
       batch->add(pkt);
+      limit_ -= 1;
     }
 
     if (f->first_pkt) {
@@ -548,7 +553,7 @@ struct task_result FlowGen::RunTask(Context *ctx, bess::PacketBatch *batch,
 }
 
 std::string FlowGen::GetDesc() const {
-  return bess::utils::Format("%d flows", active_flows_);
+  return bess::utils::Format("%d flows", limit_);
 }
 
 ADD_MODULE(FlowGen, "flowgen", "generates packets on a flow basis")
