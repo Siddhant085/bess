@@ -40,7 +40,7 @@ class Source final : public Module {
 
   static const Commands cmds;
 
-  Source() : Module(), pkt_size_(), burst_() { is_task_ = true; }
+  Source() : Module(), pkt_size_(), burst_(), burst_size_{} { is_task_ = true; }
 
   CommandResponse Init(const bess::pb::SourceArg &arg);
 
@@ -51,10 +51,13 @@ class Source final : public Module {
       const bess::pb::SourceCommandSetBurstArg &arg);
   CommandResponse CommandSetPktSize(
       const bess::pb::SourceCommandSetPktSizeArg &arg);
+  CommandResponse CommandSetBurstSize(
+      const bess::pb::SourceCommandSetBurstSizeArg &arg);
 
  private:
   int pkt_size_;
   int burst_;
+  uint64_t burst_size_;
 };
 
 #endif  // BESS_MODULES_FLOWGEN_H_

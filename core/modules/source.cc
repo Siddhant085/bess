@@ -30,11 +30,14 @@
 
 #include "source.h"
 
+
 const Commands Source::cmds = {
     {"set_pkt_size", "SourceCommandSetPktSizeArg",
      MODULE_CMD_FUNC(&Source::CommandSetPktSize), Command::THREAD_SAFE},
     {"set_burst", "SourceCommandSetBurstArg",
      MODULE_CMD_FUNC(&Source::CommandSetBurst), Command::THREAD_SAFE},
+    {"set_burst_size", "SourceCommandSetBurstSizeArg",
+     MODULE_CMD_FUNC(&Source::CommandSetBurstSize), Command::THREAD_SAFE},
 };
 
 CommandResponse Source::Init(const bess::pb::SourceArg &arg) {
@@ -55,6 +58,7 @@ CommandResponse Source::Init(const bess::pb::SourceArg &arg) {
   }
 
   burst_ = bess::PacketBatch::kMaxBurst;
+  burst_size_ = -1; // TODO: Remove constants
 
   return CommandSuccess();
 }
@@ -80,6 +84,13 @@ CommandResponse Source::CommandSetPktSize(
   return CommandSuccess();
 }
 
+CommandResponse Source::CommandSetBurstSize(
+    const bess::pb::SourceCommandSetBurstSizeArg &arg) {
+  uint64_t val = arg.burst_size();
+  burst_size_ = val + (uint64_t)get_epoch_time();
+  return CommandSuccess();
+}
+
 struct task_result Source::RunTask(Context *ctx, bess::PacketBatch *batch,
                                    void *) {
   if (children_overload_ > 0) {
@@ -89,6 +100,10 @@ struct task_result Source::RunTask(Context *ctx, bess::PacketBatch *batch,
   const int pkt_overhead = 24;
   const int pkt_size = ACCESS_ONCE(pkt_size_);
   const uint32_t burst = ACCESS_ONCE(burst_);
+
+  if (burst_size_ < (uint64_t)get_epoch_time()) {
+    return {.block = true, .packets = 0, .bits = 0};
+  }
 
   if (current_worker.packet_pool()->AllocBulk(batch->pkts(), burst, pkt_size)) {
     batch->set_cnt(burst);
