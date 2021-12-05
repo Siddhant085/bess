@@ -814,6 +814,16 @@ message QueueArg {
 }
 
 /**
+ * The Stat module is used for network statistics collection.
+ *
+ * __Input Gates__: 1
+ * __Output Gates__: 1
+ */
+message StatArg {
+  uint64 frequency = 1000000; /// Frequency of data point collection.
+}
+
+/**
  * The RandomSplit module randomly split/drop packets
  *
  * __InputGates__: 1
@@ -968,6 +978,14 @@ message SourceCommandSetBurstArg {
 }
 
 /**
+ * The Stat module has a function `set_frequency(...)` which
+ * specifies the frequency of data point collection.
+ */
+message StatCommandSetFrequencyArg {
+  uint64 frequency = 1; /// The frequency for data point collection in MHz.
+}
+
+/**
  * The Source module has a function `set_pkt_size(...)` which specifies the size
  * of packets to be produced by the Source module.
  */
@@ -975,6 +993,13 @@ message SourceCommandSetPktSizeArg {
   uint64 pkt_size = 1; /// The size (in bytes) of the packets for Source to create.
 }
 
+/**
+ * The Source module has a function `set_burst_size(...)` which specifies the size
+ * of burst to be produced by the Source module.
+ */
+message SourceCommandSetBurstSizeArg {
+  uint64 burst_size = 1; /// The size (in bytes) of the packets for Source to create.
+}
 /**
  * The Source module generates packets with no payload contents.
  *
