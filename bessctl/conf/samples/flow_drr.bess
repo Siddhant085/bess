@@ -40,13 +40,13 @@ for i in range(num_acl_rules):
 	rules.append({'src_ip':'10.0.0.5/32', 'src_port':i, 'drop':True})
 rules.append({'src_ip': '10.0.0.1/32', 'drop':False})
 acl::ACL(rules=rules)
-stat::Stat(frequency=100)
-#src::Source()
+stat::Stat(frequency=1)
+src::Source()
 
-fg -> ts -> stat -> q
+fg -> stat -> ts -> q
 #q_out->q
 q -> acl -> ms -> Sink()
-#src -> Rewrite(templates=[gen_packet('10.0.0.3')]) -> q
+src -> Rewrite(templates=[gen_packet('10.0.0.3')]) -> stat
 
 bess.add_worker(1,1)
 bess.add_worker(2,2)
